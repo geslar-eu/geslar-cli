@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/geslar-eu/geslar-cli/security/advisories/new
+    about: Never report a vulnerability in a public issue. This opens a private advisory.
+  - name: Documentation
+    url: https://docs.geslar.app/cli/reference
+    about: Install, quickstart, geslar:// reference syntax, agent profiles, MCP, known limitations.
+  - name: Account, billing, and the Geslar apps
+    url: https://geslar.app
+    about: This tracker is for the CLI and its MCP server only.

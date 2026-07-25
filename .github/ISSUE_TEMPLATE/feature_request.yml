@@ -1,0 +1,39 @@
+name: Feature request
+description: Suggest a capability, an MCP tool, or support for another client
+labels: ["enhancement", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Tell us the problem before the solution — we can often solve it in a way you had not considered, and sometimes in a way that keeps a security guarantee your suggestion would have cost.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The task, the workflow, or the thing that is currently awkward.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like Geslar CLI to do?
+    validations:
+      required: true
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: How are you handling it today?
+      description: Including "I am not" — that is useful to know.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: security
+    attributes:
+      label: Security
+      options:
+        - label: I understand that a request may be declined if it would require a secret value to be returned to the agent, and that this is a deliberate design boundary rather than a missing feature
+          required: true

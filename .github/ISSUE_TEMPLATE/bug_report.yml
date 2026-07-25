@@ -1,0 +1,104 @@
+name: Bug report
+description: Something in the Geslar CLI or its MCP server does not work as documented
+labels: ["bug", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this.
+
+        **Do not paste real secrets.** No passwords, tokens, API keys, `.env` contents, or vault items — not in the text, not in a screenshot. Redact before you post. If you have already posted one somewhere, revoke it and tell us.
+
+        **Found a security vulnerability?** Do not use this form — follow [SECURITY.md](https://github.com/geslar-eu/geslar-cli/blob/main/SECURITY.md) instead.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before reporting
+      options:
+        - label: I have checked the [known limitations](https://docs.geslar.app/cli/reference) and this is not one of them
+          required: true
+        - label: I have removed every real secret, token, and vault name I would not want public
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Geslar CLI version
+      description: Output of `geslar --version`
+      placeholder: "0.3.3"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install it?
+      options:
+        - "npm install -g @geslar/cli"
+        - "npx @geslar/cli"
+        - Standalone binary
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: client
+    attributes:
+      label: MCP client involved
+      description: Leave as "None" if this is not about the MCP server
+      options:
+        - None — plain CLI
+        - Claude Code
+        - Claude Desktop
+        - Cursor
+        - Other MCP client
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened instead?
+      description: Include the exact error message and exit code if there was one.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The exact commands you ran, in order, with secrets redacted.
+      render: shell
+      placeholder: |
+        geslar unlock --ttl 30m
+        geslar agent create my-agent --vault REDACTED
+        geslar mcp init my-agent --client claude-code
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      description: Anything that might matter — corporate proxy, unusual Node version, antivirus, restricted account.
+    validations:
+      required: false
