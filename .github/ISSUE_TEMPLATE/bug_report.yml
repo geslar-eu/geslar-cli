@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in the Geslar CLI or its MCP server does not work as documented
+description: Something in the Geslar CLI does not work as documented
 labels: ["bug", "needs triage"]
 body:
   - type: markdown
@@ -26,7 +26,7 @@ body:
     attributes:
       label: Geslar CLI version
       description: Output of `geslar --version`
-      placeholder: "0.3.3"
+      placeholder: "0.4.0"
     validations:
       required: true
 
@@ -48,22 +48,7 @@ body:
       options:
         - "npm install -g @geslar/cli"
         - "npx @geslar/cli"
-        - Standalone binary
         - Other / not sure
-    validations:
-      required: true
-
-  - type: dropdown
-    id: client
-    attributes:
-      label: MCP client involved
-      description: Leave as "None" if this is not about the MCP server
-      options:
-        - None — plain CLI
-        - Claude Code
-        - Claude Desktop
-        - Cursor
-        - Other MCP client
     validations:
       required: true
 
@@ -90,8 +75,7 @@ body:
       render: shell
       placeholder: |
         geslar unlock --ttl 30m
-        geslar agent create my-agent --vault REDACTED
-        geslar mcp init my-agent --client claude-code
+        geslar run -e DB_PASSWORD=geslar://REDACTED/REDACTED/password -- ./start-server.sh
     validations:
       required: true
 
