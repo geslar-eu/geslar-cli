@@ -13,7 +13,7 @@ Decryption happens on your own machine. Your master password and the decrypted v
 npm install -g @geslar/cli
 geslar login
 geslar unlock
-geslar run -e DB_PASSWORD=geslar://Work/Database/password -- ./start-server.sh
+geslar run -e DB_PASSWORD=geslar://personal/Database/password -- ./start-server.sh
 ```
 
 ---
@@ -62,28 +62,28 @@ Reading secrets needs your master password, asked for in the terminal only — n
 
 ```sh
 geslar unlock                      # stay unlocked for 30 minutes (--ttl 1h, at most 8h)
-geslar read geslar://Work/GitHub/password
-geslar read --unlock geslar://Work/GitHub/password   # ask for the password for this command only
+geslar read geslar://personal/GitHub/password
+geslar read --unlock geslar://personal/GitHub/password   # ask for the password for this command only
 geslar item list
 geslar lock
 ```
 
 An unlocked Vault also locks itself after 15 minutes without use. `--unlock` keeps the key in the memory of that one command and stores nothing.
 
-A reference is `geslar://<vault>/<item>[/<field>]`. The field defaults to `password`; others are `username`, `url`, `notes`, `totp` (the current code) and custom field labels. `<vault>` is `personal`, `family`, `company` or `work`, an organization name, or a Vault name. Use `%2F` for a literal `/` in a name. An ambiguous name is an error that lists the candidates; `id:<item id>` in place of the item name selects one item exactly.
+A reference is `geslar://<vault>/<item>[/<field>]`. The field defaults to `password`; others are `username`, `url`, `notes`, `totp` (the current code) and custom field labels. `<vault>` is `personal`, an organization name, or a Vault name (the reference also covers `family` and `company`). Use `%2F` for a literal `/` in a name. An ambiguous name is an error that lists the candidates; `id:<item id>` in place of the item name selects one item exactly.
 
 ## Run a command with secrets
 
 ```sh
-geslar run -e DB_PASSWORD=geslar://Work/Database/password -- ./deploy.sh
+geslar run -e DB_PASSWORD=geslar://personal/Database/password -- ./deploy.sh
 geslar run -f secrets.env -- node app.js
 ```
 
 Every reference is resolved before the command starts; if one fails, the command is not started. Values reach the command only through its environment. The command's output is masked by default (`--no-masking` turns this off). Masking hides the literal value only — not encoded forms such as base64.
 
-`geslar inject -f secrets.env` prints `KEY=value` lines for `source` or a dotenv loader. Its output is **not** masked.
+`geslar inject -f secrets.env` prints `KEY=value` lines (shell-quoted when needed) for `source` or a dotenv loader. Its output is **not** masked.
 
-In PowerShell, quote the separator when the command has options of its own: `geslar run -e DB_PASSWORD=geslar://Work/Database/password '--' node -p "1"`.
+In PowerShell, quote the separator when the command has options of its own: `geslar run -e DB_PASSWORD=geslar://personal/Database/password '--' node -p "1"`.
 
 ## Where the local key is kept
 
