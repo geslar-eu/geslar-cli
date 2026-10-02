@@ -4,6 +4,27 @@ All notable changes to `@geslar/cli`. Format: [Keep a Changelog](https://keepach
 
 ## [Unreleased]
 
+## [0.4.0] – RELEASE-DATE
+
+A new CLI for the current Geslar platform. Versions 0.1.0 – 0.3.2 are deprecated and do not work with it.
+
+### Added
+- `geslar login` (browser, default), `geslar login --device` (device code) and `geslar login --api-key [--stdin]`; `geslar signin` is an alias. `geslar logout`, `geslar whoami [--json]`, `geslar status [--json]`.
+- `geslar unlock [--ttl 30m|1h|…]` (default 30 minutes, at most 8 hours; also locks after 15 minutes without use) and `geslar lock`. The master password is asked for in the terminal only.
+- `geslar read <geslar://ref>` and `geslar item list [vault] [--json]`. `--unlock` asks for the master password for that one command and stores nothing.
+- `geslar run [-e KEY=geslar://…]… [-f secrets-file] [--no-masking] [--unlock] -- <command>` and `geslar inject -f secrets-file [--unlock]`. Every reference is resolved before anything starts or is printed. `run` masks the literal secret value in the command's output; `inject` output is not masked.
+- `geslar://<vault>/<item>[/<field>]` references with `personal`, `family`, `company`/`work`, organization and Vault names, an `id:` item qualifier, and fields `password`, `username`, `url`, `notes`, `totp` and custom labels. A name collision is always an error that lists the candidates.
+- Local state: the session is kept in an encrypted file; its key lives in the OS keychain, or — where there is none — in a key file protected by a local password. `--key-storage <auto|keychain|file>` / `GESLAR_KEY_STORAGE`.
+- Croatian and English output (`--lang hr|en`, `GESLAR_LANG`, or the system locale).
+- Exit codes: 0 success, 1 general, 2 authentication, 3 plan or policy, 4 unresolvable reference, 5 access denied, 6 Vault locked, 7 local key-file password, 126/127 command not executable/not found, 128+N killed by signal N.
+- Requires Node.js 22 or newer, and a Premium, Family, Business or Enterprise plan. Distributed through npm only.
+
+### Known limitations
+- Online-only; no offline copy of the Vault.
+- Masking in `run` covers the literal value only, not encoded forms (for example base64).
+- Every `read`, `run` and `inject` fetch of an item is recorded in the audit log (`item.accessed`); the server does not see the value or the field.
+- `read`, `run` and `inject` need `geslar unlock` or `--unlock`, which needs a terminal. A mode for CI pipelines is planned, not available.
+
 ## [0.3.2] – 2026-07-25
 
 0.3.1 shipped a stale build (0.2.0 dist) despite package.json/CLI_VERSION correctly saying 0.3.1 — `dist/` is gitignored, per-checkout build output, and nothing forced a fresh rebuild immediately before the actual `npm publish` ran. 0.3.2 is a fix-forward: the 0.3.1 fixes are correctly built this time, plus a guard so this class of mistake can't silently recur.

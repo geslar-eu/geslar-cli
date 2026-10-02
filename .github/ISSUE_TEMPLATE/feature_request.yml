@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest a capability, an MCP tool, or support for another client
+description: Suggest a capability or an improvement
 labels: ["enhancement", "needs triage"]
 body:
   - type: markdown
@@ -35,5 +35,5 @@ body:
     attributes:
       label: Security
       options:
-        - label: I understand that a request may be declined if it would require a secret value to be returned to the agent, and that this is a deliberate design boundary rather than a missing feature
+        - label: I understand that a request may be declined if it would require a secret value to be sent to the Geslar server or written somewhere unprotected, and that this is a deliberate design boundary rather than a missing feature
           required: true

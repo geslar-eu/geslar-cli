@@ -5,13 +5,14 @@
 [![license](https://img.shields.io/badge/license-proprietary-blue)](./LICENSE.md)
 [![docs](https://img.shields.io/badge/docs-docs.geslar.app-black)](https://docs.geslar.app/cli/reference)
 
-Command-line and [Model Context Protocol](https://modelcontextprotocol.io) access to the secrets in your **Geslar Škrinjar** vaults — for scripts, CI, and AI agents.
+Command-line client for [Geslar](https://geslar.app): sign in, read a secret, or run a command with secrets in its environment — for scripts and for the terminal.
 
-**No tool ever returns a secret value to the agent.** References are resolved locally, after decryption on your own machine, and injected straight into a child process's environment. The value never reaches the model as a tool response.
+Decryption happens on your own machine. Your master password and the decrypted values never go to the Geslar server.
 
 ```sh
 npm install -g @geslar/cli
-geslar signin
+geslar login
+geslar unlock
 geslar run -e DB_PASSWORD=geslar://Work/Database/password -- ./start-server.sh
 ```
 
@@ -26,77 +27,95 @@ This repository is the public home of the product. It exists for:
 - **Issue tracking** — bug reports and feature requests
 - **Security reporting** — see [SECURITY.md](./SECURITY.md)
 - **Release notes** — [CHANGELOG.md](./CHANGELOG.md)
-- **Distribution** — client install configurations and, in a future release, a Claude Code plugin marketplace
 
 Full product documentation lives at **[docs.geslar.app/cli/reference](https://docs.geslar.app/cli/reference)**.
 
 ## Requirements
 
-- **Node.js 20 or newer** (standalone Windows and Linux binaries are also available — see the docs)
+- **Node.js 22 or newer**
 - A **Geslar** account on a Premium, Family, Business, or Enterprise plan
+
+The CLI is distributed through npm only.
 
 ## Install
 
 ```sh
 npm install -g @geslar/cli
+geslar --version
 ```
 
-## MCP server
-
-`geslar mcp serve` runs a stdio MCP server scoped to an **agent profile** — a separate, revocable machine credential with its own vault scope, capabilities, and expiry. It is not your user session, and it cannot create or revoke agent profiles.
+## Sign in
 
 ```sh
-geslar unlock --ttl 30m
-geslar agent create my-agent --vault Work
-geslar mcp init my-agent --client claude-code
+geslar login            # opens your browser (alias: geslar signin)
+geslar login --device   # device code, for machines without a browser
+geslar login --api-key  # personal API key, from a hidden prompt (or one line of stdin with --stdin)
+geslar status           # who you are signed in as, and whether the Vault is unlocked
+geslar logout
 ```
 
-`geslar mcp init` detects your MCP client, writes the configuration atomically (backing up the existing file first), and **never writes a token** into it — only `GESLAR_AGENT=<name>`. If a global `geslar` binary is on your `PATH` it points the config there; otherwise it pins an exact version via `npx -y @geslar/cli@<version>`, never an unpinned `@latest`.
+An API key signs you in; it does not unlock your Vault. Device-code sign-in is off until you turn it on in your Geslar security settings; personal API keys can be disabled there.
 
-### Supported clients
+## Unlock and read
 
-| Client | `--client` value | Configuration written |
-|---|---|---|
-| Claude Code | `claude-code` | via `claude mcp add-json --scope user` |
-| Claude Desktop | `claude-desktop` | the app's own `claude_desktop_config.json` |
-| Cursor | `cursor` | `~/.cursor/mcp.json` (global scope) |
-| Any other MCP client | `json` | prints a snippet to paste yourself |
+Reading secrets needs your master password, asked for in the terminal only — never from an environment variable, an argument, or a file.
 
-### Tools
+```sh
+geslar unlock                      # stay unlocked for 30 minutes (--ttl 1h, at most 8h)
+geslar read geslar://Work/GitHub/password
+geslar read --unlock geslar://Work/GitHub/password   # ask for the password for this command only
+geslar item list
+geslar lock
+```
 
-Six tools, each carrying MCP annotations so the client can show you what it does before you approve it.
+An unlocked Vault also locks itself after 15 minutes without use. `--unlock` keeps the key in the memory of that one command and stores nothing.
 
-| Tool | Returns | Pre-grant required |
-|---|---|---|
-| `geslar_list_vaults` | Vaults this agent profile may access, with item counts. No values. | no (read-only) |
-| `geslar_list_items` | Item and field **names** in one vault. No values. | no (read-only) |
-| `geslar_whoami` | The profile's own name, scope, capabilities, expiry, lock state. No values, no owner PII. | no (read-only) |
-| `geslar_provision_env` | Writes `geslar://` **references** — not resolved values — into a `.env`-style file under the server root. | yes — `geslar mcp allow` |
-| `geslar_run` | Runs a command with references resolved into its environment. Reports exit status and line counts; returns no process output by default. | yes — `geslar mcp allow-cmd` |
-| `geslar_audit_recent` | The profile's own recent audit events. | no (read-only) |
+A reference is `geslar://<vault>/<item>[/<field>]`. The field defaults to `password`; others are `username`, `url`, `notes`, `totp` (the current code) and custom field labels. `<vault>` is `personal`, `family`, `company` or `work`, an organization name, or a Vault name. Use `%2F` for a literal `/` in a name. An ambiguous name is an error that lists the candidates; `id:<item id>` in place of the item name selects one item exactly.
 
-### The pre-grant model
+## Run a command with secrets
 
-Anything that writes or executes requires an approval issued **outside the agent's own channel** — you run `geslar mcp allow` or `geslar mcp allow-cmd` in your own terminal. Grants are TTL-bound (1 hour by default, 8 hours maximum), optionally use-limited, signed locally, and OS-wrapped. `geslar mcp grants` lists them; `geslar mcp revoke` clears them.
+```sh
+geslar run -e DB_PASSWORD=geslar://Work/Database/password -- ./deploy.sh
+geslar run -f secrets.env -- node app.js
+```
 
-A locked vault always fails closed with an actionable error. `geslar mcp serve` never prompts for your master password under any circumstance, and refuses to start under a human session.
+Every reference is resolved before the command starts; if one fails, the command is not started. Values reach the command only through its environment. The command's output is masked by default (`--no-masking` turns this off). Masking hides the literal value only — not encoded forms such as base64.
+
+`geslar inject -f secrets.env` prints `KEY=value` lines for `source` or a dotenv loader. Its output is **not** masked.
+
+In PowerShell, quote the separator when the command has options of its own: `geslar run -e DB_PASSWORD=geslar://Work/Database/password '--' node -p "1"`.
+
+## Where the local key is kept
+
+After sign-in the CLI keeps its session in an encrypted file in your user profile. The key that seals it lives in your operating system's keychain (Windows Credential Manager, macOS Keychain, Linux Secret Service). Where no keychain is available, the CLI uses a key file protected by a local password you choose (not your master password). `--key-storage <auto|keychain|file>` or `GESLAR_KEY_STORAGE` selects the mode.
+
+## What the server sees
+
+The server never sees your master password, a decrypted value, or which field you read.
+
+It **does** see which item `read`, `run` and `inject` fetch: every fetch is recorded as an `item.accessed` event in the audit log.
 
 ## What this does and does not protect against
 
 We would rather you read this before installing than after.
 
-**Guaranteed:** no MCP tool response ever contains a secret value. Reference resolution happens on your machine after local decryption; the server never learns which vault, item, or field a reference asks for.
+- A command you start with `geslar run` receives the secrets in its environment. If that command is malicious or compromised, it can send them anywhere it can reach. This is true of every tool that injects secrets into a process.
+- Masking is a guard against accidental leaks in output, not a security boundary. It matches the literal value only.
+- While the Vault is unlocked, other processes running as your operating-system user may be able to use the stored unlock. Run `geslar lock` when you are done, or use `--unlock` for a single command.
+- Environment variables of a running process can be read by other processes of the same user. On a shared machine, isolate the process.
+- The CLI is online-only; it keeps no offline copy of your Vault.
 
-**Not guaranteed:** an agent that you have allowed to run a command can, in principle, exfiltrate a secret from that command's environment through any channel the command itself has — the network, or encoding into timing or exit status. This is categorical to every secret-injection tool, and the pre-grant model does not change it. The real defenses are least-privilege agent scope, the pre-grant, the audit trail, and revocation.
+Further known limitations are listed in the [documentation](https://docs.geslar.app/cli/limitations).
 
-`--return-stdout-tail` opts into a scrubbed tail of a command's output. The scrubber is best-effort — it does not recognize short or low-entropy values — and is a guard against accidental leakage, not a boundary against a command that is deliberately exfiltrating.
+## Planned
 
-Further known limitations are listed in the [reference documentation](https://docs.geslar.app/cli/reference) and in each release's entry in [CHANGELOG.md](./CHANGELOG.md).
+Not part of the current release: a non-interactive mode for CI pipelines, agent profiles, and an MCP server. Today `read`, `run` and `inject` need `geslar unlock` or `--unlock`, which needs a terminal.
 
 ## Documentation
 
-- [CLI reference](https://docs.geslar.app/cli/reference) — install, quickstart, `geslar://` reference syntax, agent profiles, MCP, known limitations
-- [geslar.app](https://geslar.app) — the Geslar Škrinjar password manager
+- [CLI reference](https://docs.geslar.app/cli/reference) — `geslar://` syntax, commands, exit codes
+- [Quickstart](https://docs.geslar.app/cli/quickstart) and [known limitations](https://docs.geslar.app/cli/limitations)
+- [Help article](https://geslar.app/pomoc/geslar-cli) on geslar.app
 
 ## Support
 
