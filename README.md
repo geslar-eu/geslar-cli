@@ -1,4 +1,4 @@
-<!-- Source: the product text of this README is apps/cli/README.md of geslar-eu/geslar-platform at commit 53da9958ded20c5d899ca16a5863ad038c6086fa (pull request #368, branch docs/cli-readme-other-mcp-clients; after its merge the merge commit on main has the same text), with the trial-release wording removed for 1.0.0. Change it THERE and copy it; the sections "About this repository", "Support" and "License" belong to this repository only. -->
+<!-- Source: the product text of this README is apps/cli/README.md of geslar-eu/geslar-platform at commit 93ce77545b0f3af8ccc20fcf20e542ae6851d105 (pull request #368, branch docs/cli-readme-other-mcp-clients; after its merge the merge commit on main has the same text), with the trial-release wording removed for 1.0.0. Change it THERE and copy it; the sections "About this repository", "Support" and "License" belong to this repository only. -->
 
 # Geslar CLI
 
@@ -202,6 +202,8 @@ Where that goes and what the fields are called is in the documentation of your c
 
 **Tested with:** the official MCP TypeScript SDK client (pinned in the CLI, run in its test suite against the real `mcp serve` over a stdio pipe and a fake Geslar server) and MCP Inspector 2.9.0 in CLI mode (`initialize`, `tools/list` with the five tools, and calls of `geslar_whoami` and `geslar_list_vaults`, against a fake Geslar server). Both check the protocol; neither is a client that people use. **`mcp init` configures:** Claude Code, Claude Desktop and Cursor, and prints the generic entry above for anything else. If your client works, or does not, tell us which one and which version in an [issue](https://github.com/geslar-eu/geslar-cli/issues).
 
+There is no hosted version of the Geslar MCP server, by design: your secrets are decrypted only on your own computer, so the server has to run there. Chat apps that run only in the browser or in the cloud cannot start it; use a client that runs on your computer.
+
 ## CI mode
 
 A CI job uses a **service account** (created in the web app under *Settings → Agents & automation → Agents & CI*, kind "Service (CI)") and its token. Put the whole `gsm_…` token in the secret store of your CI and hand it to the job as the environment variable `GESLAR_SERVICE_TOKEN`:
@@ -226,10 +228,30 @@ What happens:
 
 Advice: one service account per repository, read-only, with the shortest expiry that suits you and a rotation date; one `geslar run` per job rather than one per step (every start exchanges the token once; the server limits exchanges per hour and per address); a CI *environment* with protection for production secrets; never run it for pull requests from forks (GitHub does not give them your secrets, and `pull_request_target` with code from the pull request must not be used). Honest limit: while `geslar` runs, the token is in its own process environment (on Linux, `/proc/<pid>/environ` is readable by the same user); it is not passed on to anything it starts.
 
+## Plans and limits
+
+- **Signing in as a person** (`geslar login`, then `read`, `run`, `inject`) needs a Premium, Family, Business or Enterprise plan; the Free plan does not include it.
+- **Agent profiles and CI service accounts** (machine identities) need the same plans, and their number is limited. Agents and service accounts count together; only an identity that is neither revoked nor expired counts.
+
+| Plan | Machine identities |
+|---|---|
+| Free | 0 |
+| Premium | 5 |
+| Family | 5 |
+| Business | 20 |
+| Enterprise | 50 |
+
+- On Premium and Family the limit is per person, across their personal and family organizations; on Business and Enterprise it is per organization.
+- **Family: only the payer.** For a personal or family organization, the plan that counts is the plan of the issuing person's own personal organization. On a Family plan, that is the person who pays and holds it, so the Family plan gives agents and service accounts to the payer only. A member of the family counts only with a paid plan of their own.
+- The plan is checked every time an identity is used, not only when it is created: when it lapses, the identity stops working.
+
 ## What this does not protect against
 
 - A person at a terminal can print any value they may read; masking covers the literal value only.
 - Anything that runs as you can read what you can read. The CLI is not a sandbox against a malicious process on your own account.
+- **While your Vault is unlocked, anything that runs as you can use it, an AI agent with access to your terminal included.** `geslar unlock` leaves an unlock record on this computer, sealed with the local key. Until it ends, any process on your account can run `geslar read`, `run` or `inject` as you, with no approval and without an agent profile: an agent profile and its approvals protect your Vault only from an agent that does not also have your unlocked session. Run `geslar lock` before you let an agent work in your terminal, or run the agent under a separate OS user. The unlock also ends by itself: 15 minutes after the last use (every use moves that deadline), and in any case after the time you gave to `geslar unlock` (30 minutes by default, at most 8 hours). `geslar lock` removes the record on this computer, does not call the server, and succeeds when nothing is unlocked. With `--key-storage file` the key that seals the record needs the local password, which is asked for in the terminal.
+- **The environment of a command started by `geslar run` can be read by other processes of the same OS user.** `geslar run` puts the secrets in the command's environment, and the CLI does nothing to hide it from them. On Linux the same user (and root) can read `/proc/<pid>/environ`; other systems have their own ways for a process of the same user to inspect it. On a shared machine, run the command in a container or under a dedicated user.
+- **There is no offline mode.** The CLI keeps no copy of your Vault: its local state is the sealed sign-in, the unlock record (the key and its deadlines), the agent profiles and the MCP command patterns. Without a connection to Geslar, `login`, `unlock`, `whoami`, `read`, `run`, `inject` and `item list` fail with exit code 1 and "Can't connect to Geslar (network error)."; `run` starts nothing. `status` reports your sign-in from local state but cannot check the unlock, so it shows the Vault as locked. `lock`, `mcp allow-cmd`, `mcp grants`, `mcp revoke` and `agent remove` (without `--revoke`) work without a connection; `agent remove --revoke` asks the server first and deletes nothing if that fails. `agent list` shows each profile as unreachable. `logout` signs out on this computer and says that the server could not be told, so the sign-in may stay valid until it expires.
 - An agent that is allowed to run a program that can run code can send that program's secrets elsewhere (see [MCP](#mcp-ai-clients)); limit what you give it and approve with care.
 
 ## Support
