@@ -7,7 +7,7 @@ body:
       value: |
         Thanks for taking the time to report this.
 
-        **Do not paste real secrets.** No passwords, tokens, API keys, `.env` contents, or vault items — not in the text, not in a screenshot. Redact before you post. If you have already posted one somewhere, revoke it and tell us.
+        **Do not paste real secrets.** No passwords, tokens (a `gsm_…` token of an agent or a service account included, and the value of `GESLAR_SERVICE_TOKEN`), API keys, `.env` contents, or vault items — not in the text, not in a screenshot, not in a log. Redact before you post. If you have already posted one somewhere, revoke it and tell us.
 
         **Found a security vulnerability?** Do not use this form — follow [SECURITY.md](https://github.com/geslar-eu/geslar-cli/blob/main/SECURITY.md) instead.
 
@@ -16,9 +16,9 @@ body:
     attributes:
       label: Before reporting
       options:
-        - label: I have checked the [known limitations](https://docs.geslar.app/cli/reference) and this is not one of them
+        - label: I have checked the [README](https://github.com/geslar-eu/geslar-cli#what-this-does-not-protect-against) and the [CHANGELOG](https://github.com/geslar-eu/geslar-cli/blob/main/CHANGELOG.md) and this is not a documented limitation
           required: true
-        - label: I have removed every real secret, token, and vault name I would not want public
+        - label: I have removed every real secret, token (`gsm_…` included), and vault name I would not want public
           required: true
 
   - type: input
@@ -26,7 +26,7 @@ body:
     attributes:
       label: Geslar CLI version
       description: Output of `geslar --version`
-      placeholder: "0.4.0"
+      placeholder: "1.0.0"
     validations:
       required: true
 
@@ -38,6 +38,27 @@ body:
         - Windows
         - macOS
         - Linux
+    validations:
+      required: true
+
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version
+      description: Output of `node --version` (the CLI needs Node.js 22 or newer)
+      placeholder: "v22.12.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: How are you using the CLI?
+      options:
+        - "As myself (geslar login)"
+        - "With an agent profile (--agent / GESLAR_AGENT)"
+        - "As an MCP server (geslar mcp serve)"
+        - "In CI with a service account (GESLAR_SERVICE_TOKEN)"
     validations:
       required: true
 

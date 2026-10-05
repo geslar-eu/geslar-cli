@@ -2,28 +2,62 @@
 
 All notable changes to `@geslar/cli`. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+<!-- Source: the [1.0.0] entry is apps/cli/CHANGELOG.md of geslar-eu/geslar-platform at commit c04cac2c986d3b706a9ad3e742d6bd72a1098a39, translated to English. -->
+
 ## [Unreleased]
 
-## [0.4.0] – RELEASE-DATE
+## [1.0.0] – RELEASE-DATE
 
-A new CLI for the current Geslar platform. Versions 0.1.0 – 0.3.2 are deprecated and do not work with it.
+The first stable version on the new Geslar platform. This list covers everything since the last published version, **0.3.2** (the old CLI, which depended on the old API). The trial version `1.0.0-rc.1` was published under the npm tag `next`.
 
 ### Added
-- `geslar login` (browser, default), `geslar login --device` (device code) and `geslar login --api-key [--stdin]`; `geslar signin` is an alias. `geslar logout`, `geslar whoami [--json]`, `geslar status [--json]`.
-- `geslar unlock [--ttl 30m|1h|…]` (default 30 minutes, at most 8 hours; also locks after 15 minutes without use) and `geslar lock`. The master password is asked for in the terminal only.
-- `geslar read <geslar://ref>` and `geslar item list [vault] [--json]`. `--unlock` asks for the master password for that one command and stores nothing.
-- `geslar run [-e KEY=geslar://…]… [-f secrets-file] [--no-masking] [--unlock] -- <command>` and `geslar inject -f secrets-file [--unlock]`. Every reference is resolved before anything starts or is printed. `run` masks the literal secret value in the command's output; `inject` output is not masked.
-- `geslar://<vault>/<item>[/<field>]` references with `personal`, `family`, `company`/`work`, organization and Vault names, an `id:` item qualifier, and fields `password`, `username`, `url`, `notes`, `totp` and custom labels. A name collision is always an error that lists the candidates.
-- Local state: the session is kept in an encrypted file; its key lives in the OS keychain, or — where there is none — in a key file protected by a local password. `--key-storage <auto|keychain|file>` / `GESLAR_KEY_STORAGE`.
-- Croatian and English output (`--lang hr|en`, `GESLAR_LANG`, or the system locale).
-- Exit codes: 0 success, 1 general, 2 authentication, 3 plan or policy, 4 unresolvable reference, 5 access denied, 6 Vault locked, 7 local key-file password, 126/127 command not executable/not found, 128+N killed by signal N.
-- Requires Node.js 22 or newer, and a Premium, Family, Business or Enterprise plan. Distributed through npm only.
 
-### Known limitations
-- Online-only; no offline copy of the Vault.
-- Masking in `run` covers the literal value only, not encoded forms (for example base64).
-- Every `read`, `run` and `inject` fetch of an item is recorded in the audit log (`item.accessed`); the server does not see the value or the field.
-- `read`, `run` and `inject` need `geslar unlock` or `--unlock`, which needs a terminal. A mode for CI pipelines is planned, not available.
+**Sign-in and session**
+- `geslar login` (browser, with PKCE and a DPoP-bound refresh token), `geslar login --device` (device code, for machines without a browser), `geslar status`, `geslar logout`.
+- The key is kept in the OS keychain (Windows, macOS, Linux Secret Service) or, where there is none, in a sealed local store with a key file protected by a local password (`--key-storage file`).
+- Croatian and English messages with automatic language detection; `--json` output is language-neutral.
+
+**Unlock and read**
+- `geslar unlock` / `geslar lock` (the password is asked for in the terminal only, without echo; `--ttl`, at most 8 h) and `--unlock` for a single command.
+- `geslar read` and `geslar item list` with references `geslar://<vault>/<item>[/<field>]`: the keywords `personal`, `family`, `company` and `work`, `%2F` for a slash in a name, and an ambiguous name is an error that lists the candidates.
+- `geslar run` and `geslar inject` (`-e KEY=geslar://…`, `-f file`): every reference is resolved before the command starts, values reach the command only through its environment, and the command's output is masked (`--no-masking` turns it off).
+
+**Agents (AI tools)**
+- Agent profiles: `geslar agent add | list | remove [--revoke]`, selected with `--agent <name>` or `GESLAR_AGENT`. The token (`gsm_…`) is read only from the hidden prompt or `--stdin`, never from an argument or the environment; the profile is stored sealed.
+- An agent cannot print a value: `read` and `inject` are refused to it, and `run` works only for an allowed command, with masking, and with a reason of 1 to 200 characters that the approving person can see.
+- Approvals: `geslar approval request | status | list`. The first read of a Vault's items needs a person: `run` stops with exit code 8, prints a link and a short code, and starts nothing. The person approves in the web app with their password and a fresh 2FA code, every time, and can approve less than was asked, never more. A request is valid for 10 minutes; the CLI does not wait for the decision and cannot approve anything.
+
+**MCP**
+- `geslar mcp serve`: a stdio MCP server over an agent profile with five tools: `geslar_list_vaults`, `geslar_list_items` (names and types only), `geslar_whoami`, `geslar_provision_env` (writes only `KEY=geslar://…` references, never values) and `geslar_run` (answers only with the exit code, how it ended, the duration and the number of output lines; a filtered tail of the output only with `--return-stdout-tail`).
+- `geslar mcp init` writes the entry into a client's configuration (Claude Code, Claude Desktop, Cursor, or print-only JSON), without the token and with a backup; a configuration that cannot be parsed, or is a symbolic link, is left untouched.
+- `geslar mcp allow-cmd | grants | revoke`: the commands an agent may start are approved by a person in the terminal with a typed confirmation (1 h by default, at most 8 h, `--max-uses`).
+
+**CI mode**
+- `GESLAR_SERVICE_TOKEN`: the token of a service account from the environment gives a session that lives in memory only, with no sign-in, unlock, terminal, keychain or disk. It works for `read`, `run`, `inject`, `item list` and `whoami` / `status`. It is closed against an agent token: the session is refused unless the server says exactly `service`. The child of `run` never receives the token or any other `GESLAR_*` credential, and the token is masked.
+
+**Exit codes**
+- 0 success · 1 usage or other error · 2 not signed in, or the identity is invalid, revoked or expired · 3 the plan does not include this · 4 a reference cannot be resolved · 5 access denied or outside the scope (the same as "does not exist") · 6 the Vault is locked · 7 the key store or the key-file password is unusable · 8 a person must approve first · 126 and 127 for `run` (the command cannot be executed / was not found).
+
+**Platforms**
+- Linux Secret Service: the real OS keychain also works across processes. An agent profile needs a persistent key store: `agent add` and `mcp serve` stop with exit code 7 before the token is used when there is no Secret Service. A lost profile key is named instead of the profile silently disappearing.
+- Windows: stopping the whole process tree (`run`, `geslar_run`) does not rely on `taskkill` alone; it has three layers.
+- The licences of all third-party packages are built into the package (`THIRD_PARTY_LICENSES.txt`).
+
+### Changed
+- **Output is cleaned of control characters.** Names of Vaults, items, organizations and identities, and error texts, are printed without terminal escape sequences (ESC/ANSI), control, bidi and invisible characters: terminal sequences are removed whole, other characters become the replacement character (U+FFFD), so a name cannot recolour, move or forge a line of output. The same applies to names in the MCP tools and to the output tail that `geslar_run` returns to an agent. Secret values are never changed.
+- `--json` writes C1 control characters, bidi and other format characters inside strings as `\uXXXX`. The JSON is still valid and equal after parsing.
+- The message about Linux keyutils now says what is true: the key does not survive a restart of the computer. The claim about a logout is gone.
+- An invalid `-e` argument (a value that is not `KEY=geslar://…`) now adds the PowerShell advice: put `'--'` in quotes.
+- A service token that the server refuses (unknown, revoked or expired; the server does not say which) has its own message, telling you to create a new service account and update the secret; the message for agents stays for agents.
+- The `invalid_command` error now says in its `hint` field that `command` must be a plain program name and the arguments go in `args`.
+
+### Removed
+- **`geslar mcp serve --allow-shell` is removed.** `geslar_run` never starts a shell any more: `command` must be a plain program name (letters, digits, `. _ + -`) and every argument goes in `args`. A command line (`npm run build`, or anything with `;`, `&`, `|`, a backtick, `$(`, `<`, `>` or a newline) is refused as `invalid_command` before anything starts, with an `allow-cmd` permission or without. The child is always started with `shell: false`. The trial version `1.0.0-rc.1` still has this option; the stable version does not. Migration: instead of `{"command": "npm run build"}` send `{"command": "npm", "args": ["run", "build"]}`.
+- **Signing in with a personal API key is turned off.** `geslar login --api-key` is hidden from the help and is refused with a pointer to `geslar login`; the server keeps those keys off as well, and sessions signed in that way are signed out with a message. The switch `GESLAR_ENABLE_PERSONAL_KEY_LOGIN=1` exists only in the CLI and does not change anything on the server.
+
+### Security
+- An agent's access is always approved by a person (password and a fresh 2FA code), never by the CLI. An agent receives a secret value only in the environment of a command the person has allowed, and with masking.
+- The token of a service account is in no output and no error message.
 
 ## [0.3.2] – 2026-07-25
 
