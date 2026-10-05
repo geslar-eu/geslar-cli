@@ -15,10 +15,12 @@ Please include, as far as you have it: the CLI version (`geslar --version`), you
 
 ## What to expect
 
-- **Acknowledgement within 3 working days.**
-- An initial assessment, with our view of severity and whether we consider it in scope, **within 10 working days**.
-- Progress updates at least every 14 days until the report is closed.
-- Credit in the release notes and in the published advisory, under whatever name or handle you prefer, unless you ask us not to.
+These are targets we work to, not guarantees:
+
+- We aim to **acknowledge** your report **within 3 working days**.
+- We aim to give an **initial assessment**, with our view of severity and whether we consider it in scope, **within 10 working days**.
+- We aim to **update you at least every 14 days** until the report is closed.
+- We are happy to **credit you** in the release notes and in the published advisory, under whatever name or handle you prefer, unless you ask us not to.
 
 We ask you to give us a reasonable window to ship a fix before publishing. We will agree a disclosure date with you rather than impose one, and we will not ask you to stay quiet indefinitely.
 
@@ -51,7 +53,7 @@ Security fixes are shipped as a new 1.0.x version; older versions are not patche
 - Attacks that need an already compromised operating-system account, malware running as the user, root or administrator access, or physical access to an unlocked machine. Geslar CLI is not a sandbox against a malicious process running as you.
 - Vulnerabilities in third-party dependencies with no demonstrated impact on Geslar CLI.
 - Social engineering of Geslar staff or users, and denial of service through volume.
-- The Geslar web application, the browser extension and the mobile apps. Those are separate products; you may report them through the same channel and we will route them.
+- The Geslar web application and the browser extension. Those are separate products; you may report them through the same channel and we will route them.
 
 ## Safe harbour
 

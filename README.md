@@ -1,4 +1,4 @@
-<!-- Source: the product text of this README is apps/cli/README.md of geslar-eu/geslar-platform at commit c04cac2c986d3b706a9ad3e742d6bd72a1098a39, with the trial-release wording removed for 1.0.0. Change it THERE and copy it; the sections "About this repository", "Support" and "License" belong to this repository only. -->
+<!-- Source: the product text of this README is apps/cli/README.md of geslar-eu/geslar-platform at commit 77d06cb010ef57d1a66ac43c1366ee79ccb9c36b (pull request #368, branch docs/cli-readme-other-mcp-clients; after its merge the merge commit on main has the same text), with the trial-release wording removed for 1.0.0. Change it THERE and copy it; the sections "About this repository", "Support" and "License" belong to this repository only. -->
 
 # Geslar CLI
 
@@ -167,6 +167,40 @@ geslar mcp revoke --all                  # or: geslar mcp revoke <id or pattern>
 ```
 
 A pattern lasts one hour unless you set `--ttl` (at most 8h), and `--max-uses` limits how many times it can be used. Keep patterns narrow (`npm test`, not `npm *`). **A pattern is not a security boundary:** a command that can run arbitrary code (a shell, `node`, `python`, `npx` and the like) can read the secrets in its own environment and send them anywhere. What protects your Vault is the Vault you gave the agent, its time and read limits, and the approval by a person with 2FA — not the pattern.
+
+### Other MCP clients
+
+Any MCP client that can start a local stdio server should work: `geslar mcp serve` speaks the MCP protocol over standard input and output only (no network port) and relies on nothing that is specific to one client. The configuration of a client names a command, its arguments and an environment; for Geslar they are:
+
+- command `geslar`, arguments `mcp serve`, environment `GESLAR_AGENT=<profile name>` (instead of the environment variable you can add `--agent <profile name>` to the arguments);
+- when `geslar` is not on the PATH: command `npx`, arguments `-y @geslar/cli@<exact version> mcp serve`, the same environment.
+
+The profile must exist (`geslar agent add <profile name>`) and the OS keychain must be usable: the server never asks for a password. `mcp init` can print the entry in the shape that many clients read:
+
+```sh
+geslar mcp init ci-bot --client json
+```
+
+```json
+{
+  "mcpServers": {
+    "geslar": {
+      "command": "geslar",
+      "args": [
+        "mcp",
+        "serve"
+      ],
+      "env": {
+        "GESLAR_AGENT": "ci-bot"
+      }
+    }
+  }
+}
+```
+
+Where that goes and what the fields are called is in the documentation of your client; `mcp init` does not guess it. On Windows the entry that `mcp init` writes for Claude Desktop starts `npx` through `cmd` (`cmd /c npx -y …`), which is not yet verified on a real client (see above); a client that starts commands without a shell may need the same, and installing `geslar` globally avoids the question.
+
+**Tested with:** the official MCP TypeScript SDK client (pinned in the CLI, run in its test suite against the real `mcp serve` over a stdio pipe and a fake Geslar server) and MCP Inspector 2.9.0 in CLI mode (`initialize`, `tools/list` with the five tools, and calls of `geslar_whoami` and `geslar_list_vaults`, against a fake Geslar server). Both check the protocol; neither is a client that people use. **`mcp init` configures:** Claude Code, Claude Desktop and Cursor, and prints the generic entry above for anything else. If your client works, or does not, tell us which one and which version in an [issue](https://github.com/geslar-eu/geslar-cli/issues).
 
 ## CI mode
 

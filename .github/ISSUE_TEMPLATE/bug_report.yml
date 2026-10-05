@@ -62,6 +62,15 @@ body:
     validations:
       required: true
 
+  - type: input
+    id: mcp-client
+    attributes:
+      label: MCP client and version (optional)
+      description: Only if you use `geslar mcp serve`. The name and version of the client that starts it (for example Claude Code, Claude Desktop, Cursor, or another), and the operating system it runs on. Never paste its configuration file without removing tokens.
+      placeholder: "client name, version, operating system"
+    validations:
+      required: false
+
   - type: dropdown
     id: install
     attributes:
