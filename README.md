@@ -1,4 +1,4 @@
-<!-- Source: the product text of this README is apps/cli/README.md of geslar-eu/geslar-platform at commit 77d06cb010ef57d1a66ac43c1366ee79ccb9c36b (pull request #368, branch docs/cli-readme-other-mcp-clients; after its merge the merge commit on main has the same text), with the trial-release wording removed for 1.0.0. Change it THERE and copy it; the sections "About this repository", "Support" and "License" belong to this repository only. -->
+<!-- Source: the product text of this README is apps/cli/README.md of geslar-eu/geslar-platform at commit 53da9958ded20c5d899ca16a5863ad038c6086fa (pull request #368, branch docs/cli-readme-other-mcp-clients; after its merge the merge commit on main has the same text), with the trial-release wording removed for 1.0.0. Change it THERE and copy it; the sections "About this repository", "Support" and "License" belong to this repository only. -->
 
 # Geslar CLI
 
