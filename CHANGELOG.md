@@ -6,7 +6,7 @@ All notable changes to `@geslar/cli`. Format: [Keep a Changelog](https://keepach
 
 ## [Unreleased]
 
-## [1.0.0] – RELEASE-DATE
+## [1.0.0] – 2026-10-06
 
 The first stable version on the new Geslar platform. This list covers everything since the last published version, **0.3.2** (the old CLI, which depended on the old API). The trial version `1.0.0-rc.1` was published under the npm tag `next`.
 
